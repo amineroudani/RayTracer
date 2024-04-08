@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/amineroudani/Desktop/RayTracer",
+      "program": "/Users/amineroudani/Desktop/RayTracer/build/Debug/outDebug"
+    }
+  ]
+}
