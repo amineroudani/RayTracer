@@ -118,7 +118,7 @@ public:
 
 };
 
-class Scene{
+class Scene {
 public:
     void addSphere(const Sphere& s)
     {
@@ -236,8 +236,7 @@ public:
 	std::vector<Sphere> objects;
     double I;
     Vector L;
-
-;
+};
 
 
 int main() {
