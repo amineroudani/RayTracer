@@ -150,6 +150,11 @@ public:
         return has_inter;
     }
 
+
+
+
+
+
 	Vector getColor(const Ray& r, int bounces)
     {
         if(bounces <=0)
@@ -319,5 +324,5 @@ int main() {
     stbi_write_png("image.png", W, H, 3, &image[0], 0);
  
     return 0;
-}
-    
+};
+
