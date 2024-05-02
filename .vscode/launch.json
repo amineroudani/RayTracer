@@ -6,8 +6,8 @@
       "type": "lldb",
       "request": "launch",
       "args": [],
-      "cwd": "/Users/amineroudani/Desktop/RayTracer",
-      "program": "/Users/amineroudani/Desktop/RayTracer/build/Debug/outDebug"
+      "cwd": "/Users/amineroudani/Desktop/S6/RayTracer",
+      "program": "/Users/amineroudani/Desktop/S6/RayTracer/build/Debug/outDebug"
     }
   ]
 }
