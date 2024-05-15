@@ -5,7 +5,7 @@
 #include <random>
 #include <cfloat>
 #include <tuple>
-#include <omp.h>
+//#include <omp.h>
 #include <list>
 #include <chrono>
 #include <iostream>
@@ -131,16 +131,16 @@ class Ray {
     public:
         Vector O;
         Vector u;
-        explicit Ray(Vector origin, Vector direction) {
-            O = origin;
+        explicit Ray(Vector origin, Vector direction) {O = origin;
             u = direction;
         }
 };
 
 
+//  STRUCTS
+
 // -----------------------------------------------------------------------------------------------------------------------------------------------
-// INTERSECTION ----------------------------------------------------------------------------------------------------------------------------------
-// this is the general structure for intersections in the raytracer
+// INTERSECTION STRUCT ----------------------------------------------------------------------------------------------------------------------------------
 
 struct Intersection {
     
@@ -157,6 +157,8 @@ struct Intersection {
     : color(color), refractiveIndex(refractiveIndex), isMirror(isMirror) {}
 
 };
+
+
 
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------
@@ -221,10 +223,21 @@ public:
     Vector B_min;
     Vector B_max;
 
-    explicit BoundingBox(Vector min = Vector(), Vector max = Vector()) {
-        B_min = min;
+    explicit BoundingBox(Vector min = Vector(), Vector max = Vector()) {B_min = min;
         B_max = max;
     }
+};
+
+
+// -----------------------------------------------------------------------------------------------------------------------------------------------
+// NODE STRUCT ----------------------------------------------------------------------------------------------------------------------------------
+
+struct Node {
+    BoundingBox bbox;
+    int startingTriangle;
+    int endingTriangle;
+    Node* leftChild;
+    Node* rightChild;
 };
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------
@@ -241,16 +254,6 @@ public:
     int group;       // face group
 };
 
-// -----------------------------------------------------------------------------------------------------------------------------------------------
-// NODE STRUCTURE ----------------------------------------------------------------------------------------------------------------------------------
-
-struct Node {
-    BoundingBox bbox;
-    int startingTriangle;
-    int endingTriangle;
-    Node* leftChild;
-    Node* rightChild;
-};
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------
 // TRIANGLE MESH ----------------------------------------------------------------------------------------------------------------------------------
@@ -451,7 +454,7 @@ public:
         }
         fclose(f);
 
-        this->buildBVH(root, 0, indices.size());
+        // this->buildBVH(root, 0, indices.size());
     }
 
 
@@ -677,6 +680,7 @@ public:
                     
                     // Implementing Frensel Reflection 
                     double fresnelReflectance = pow((refractiveRatio - inverseRefractiveRatio) / (refractiveRatio + inverseRefractiveRatio), 2);
+                    // double fresnelReflectance = 0;
                     double reflectance = fresnelReflectance + (1 - fresnelReflectance) * pow(1 - fabs(dot(normal, refractedDirection)), 5);
                     if (uniform(engine) < reflectance) {
                         Vector totalReflectionDirection = ray.u - (2 * dot(ray.u, intersection.N) * intersection.N);
@@ -686,12 +690,14 @@ public:
                         Ray refractedRay(adjustedPosition, refractedDirection);
                         return getColor(refractedRay, depth - 1);
                     }
+                    
                 } else {
                     // Handle total internal reflection
                     Vector totalInternalReflectionDirection = ray.u - (2 * dot(intersection.N, ray.u) * intersection.N);
                     Ray totalInternalReflectedRay(adjustedPosition, totalInternalReflectionDirection);
                     return getColor(totalInternalReflectedRay, depth - 1);
                 }
+                
             }
 
             // Calculate direct lighting using the point light model
@@ -711,12 +717,13 @@ public:
 };
 
 
+
 void BoxMuller(double standardDev, double& x, double& y) {
     double r1 = uniform(engine);
     double r2 = uniform(engine);
     x = standardDev * sqrt(-2 * log(r1)) * cos(2 * M_PI * r2);
     y = standardDev * sqrt(-2 * log(r1)) * sin(2 * M_PI * r2);
-}
+};
 
 
 
@@ -744,7 +751,7 @@ int main() {
     
     // Adjust these based off Computer Performance.
     int max_bounces = 5;
-    int rayPerPixel = 1;
+    int rayPerPixel = 10;
 
     bool sphere = false;
 
@@ -752,9 +759,9 @@ int main() {
 
     // these are the 3 spheres to check for refraction, frensel, reflection, etc.
 
-    Sphere S1           (Vector(20, 0, 0), 10, Vector(1., 1., 1.), false, 1, false);
-    Sphere S2           (Vector(-20, 0, 0), 10, Vector(1., 1., 1.), false, 1.5);
-    Sphere S3           (Vector(0, 0, 0), 10, Vector(1., 1., 1.), true, 1);
+    // Sphere S1           (Vector(20, 0, 0),       10,      Vector(1., 1., 1.), false, 1, false);
+    // Sphere S2           (Vector(-20, 0, 0),      10,      Vector(1., 1., 1.), false, 1.5);
+    // Sphere S3           (Vector(0, 0, 0),        10,      Vector(1., 1., 1.), true, 1);
 
     // build the walls from spheres as per lecture notes
     Sphere ceilingWall      (Vector(0, 1000, 0),    940,    Vector(0.5, 0.5, 0));
@@ -765,9 +772,9 @@ int main() {
     Sphere rightWall        (Vector(-1000, 0, 0),   940,    Vector(1, 0.5, 0.5));
 
     // we add everything to the scene 
-    scene.addGeometry(&S1);
-    scene.addGeometry(&S2);
-    scene.addGeometry(&S3);
+    // scene.addGeometry(&S1);
+    // scene.addGeometry(&S2);
+    // scene.addGeometry(&S3);
 
     scene.addGeometry(&ceilingWall);
     scene.addGeometry(&floorWall);
@@ -777,20 +784,24 @@ int main() {
     scene.addGeometry(&rightWall);
 
     // add cat to the scene
-    // TriangleMesh cat = TriangleMesh(0.6, Vector(0, -10, 0), Vector(1., 1., 1.));
-    // cat.readOBJ("cat.obj");
-    // scene.addGeometry(&cat);
+    TriangleMesh cat = TriangleMesh(0.6, Vector(0, -10, 0), Vector(1., 1., 1.));
+    cat.readOBJ("cat.obj");
+    scene.addGeometry(&cat);
 
 
-    #pragma omp parallel for schedule(dynamic, 1)
+    //#pragma omp parallel for schedule(dynamic, 1)
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
             Vector pixelColor = Vector(0., 0., 0.);
             double x, y;
 
             for (int k = 0; k < rayPerPixel; k++) {
+            // Antialiasing is done here through the random component. 
                 double u = (j + uniform(engine)) / W;
                 double v = (i + uniform(engine)) / H;
+            // Below is wihtout antialiasing
+                // double u = (j + 0.5) / W;
+                // double v = (i + 0.5) / H;
                 Vector Pixel = Vector(Camera[0] + (u - 0.5) * 2 * tan(angle/2) * W,
                                     Camera[1] - (v - 0.5) * 2 * tan(angle/2) * H,
                                     Camera[2] - W/(2*tan(angle/2)));
@@ -808,6 +819,6 @@ int main() {
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
     std::cout << "Rendering time: " << duration.count() << " ms." << std::endl;
 
-    stbi_write_png("imag5.png", W, H, 3, &image[0], 0);
+    stbi_write_png("Picture5.png", W, H, 3, &image[0], 0);
     return 0;
 }
